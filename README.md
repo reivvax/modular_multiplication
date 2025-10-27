@@ -2,4 +2,6 @@ Simple project to visualize modular multiplication patterns using Tkinter and PI
 Supports circle and polygons.
 
 Usage:
-    uv run modular_multiplication.py
+```bash
+uv run modular_multiplication.py
+```
