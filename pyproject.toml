@@ -1,0 +1,11 @@
+[project]
+name = "modular_multiplication"
+version = "0.1.0"
+dependencies = [
+    "numpy",
+    "pillow",
+]
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
