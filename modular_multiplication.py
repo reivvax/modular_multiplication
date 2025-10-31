@@ -1,3 +1,4 @@
+import colorsys
 from typing import List
 import tkinter as tk
 import numpy as np
@@ -5,7 +6,7 @@ from PIL import Image, ImageDraw, ImageTk, ImageFont
 
 from utils import *
 
-IMAGE_SIZE = 1200
+IMAGE_SIZE = 800
 DRAWING_SIZE = IMAGE_SIZE * 0.9
 MAX_VERTEX_COUNT = 50
 MAX_MODULUS = 1000
@@ -17,6 +18,7 @@ class ModularMultiplicationDisplay:
         self.modulus = 9
         self.multiplier = 2
         self.angle = 0 # in radians
+        self.colorful = False
         self.img_size = image_size
         self.drawing_width = drawing_width
         self.center = self.img_size // 2
@@ -59,18 +61,27 @@ class ModularMultiplicationDisplay:
 
     def compute_connections(self):
         connections = []
+        max_dist = 0
+        min_dist = 1e9
         for i, _ in enumerate(self.edge_points):
             end_index = (i * self.multiplier) % (len(self.edge_points))
-            connections.append((i, end_index))
+            dist = abs(end_index - i)
+            dist = min(dist, len(self.edge_points) - dist)
+            connections.append((i, end_index, dist))
+            max_dist = max(max_dist, dist)
+            min_dist = min(min_dist, dist)
+
+        self.max_dist = max_dist
+        self.min_dist = min_dist
         self.connections = connections
 
-    def change_parameters(self, vertex_count: int, modulus: int, multiplier: int, angle: float):
+    def change_parameters(self, vertex_count: int, modulus: int, multiplier: int, angle: float, colorful: bool):
         vertex_count_changed = self.vertex_count != vertex_count
         modulus_changed = self.modulus != modulus
         multiplier_changed = self.multiplier != multiplier
         angle_changed = self.angle != angle
         actual_modulus_prev = len(self.edge_points) if hasattr(self, 'edge_points') else 0
-
+        self.colorful = colorful
         self.angle = angle
         if angle_changed or vertex_count_changed:
             self.vertex_count = vertex_count
@@ -95,10 +106,17 @@ class ModularMultiplicationDisplay:
             self.draw.polygon([(p.real, p.imag) for p in self.vertex_points], outline="white")
 
     def draw_multiplication_connections(self):
-        for start_idx, end_idx in self.connections:
+        distances_range = self.max_dist - self.min_dist
+        for start_idx, end_idx, dist in self.connections:
             start_point = self.edge_points[start_idx]
             end_point = self.edge_points[end_idx]
-            self.draw.line([start_point, end_point], fill="white")
+            color = "white"
+            if self.colorful:
+                normalized =  (dist - self.min_dist) / distances_range
+                r, g, b = colorsys.hsv_to_rgb(normalized, 1.0, 1.0)
+                color = (int(r * 255), int(g * 255), int(b * 255))
+
+            self.draw.line([start_point, end_point], fill=color)
 
     def get_image(self):
         self.img = Image.new("RGB", (self.img_size, self.img_size), "black")
@@ -177,7 +195,7 @@ class GUI:
         multiplier = self.multiplier_var.get()
         angle = np.radians(self.angle_var.get())
 
-        self.display.change_parameters(vertex_count, modulus, multiplier, angle)
+        self.display.change_parameters(vertex_count, modulus, multiplier, angle, True)
         img = self.display.get_image()
 
         self.tk_img = ImageTk.PhotoImage(img)
